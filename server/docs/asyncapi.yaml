@@ -1,0 +1,320 @@
+asyncapi: 3.1.0
+
+info:
+  title: Basic Chat WebSocket API
+  version: 0.1.0
+  description: |
+    Basic chat over Socket.IO.
+
+    Notes:
+    - Transport is Socket.IO (WebSocket + fallbacks), documented here as message-based WebSocket.
+    - All clients are implicitly in the global room `general`.
+    - The client connects to the Socket.IO namespace `/chat`.
+
+defaultContentType: application/json
+
+servers:
+  local:
+    host: localhost:3001
+    protocol: ws
+    pathname: /chat
+    description: Local development server (Socket.IO namespace `/chat`).
+
+channels:
+  authIdentify:
+    address: auth:identify
+    messages:
+      authIdentify:
+        $ref: '#/components/messages/AuthIdentify'
+
+  authIdentified:
+    address: auth:identified
+    messages:
+      authIdentified:
+        $ref: '#/components/messages/AuthIdentified'
+
+  serverReady:
+    address: server:ready
+    messages:
+      serverReady:
+        $ref: '#/components/messages/ServerReady'
+
+  messageSend:
+    address: message:send
+    messages:
+      messageSend:
+        $ref: '#/components/messages/MessageSend'
+
+  messageNew:
+    address: message:new
+    messages:
+      messageNew:
+        $ref: '#/components/messages/MessageNew'
+
+  typing:
+    address: typing
+    messages:
+      typing:
+        $ref: '#/components/messages/Typing'
+
+  typingUpdate:
+    address: typing:update
+    messages:
+      typingUpdate:
+        $ref: '#/components/messages/TypingUpdate'
+
+  error:
+    address: error
+    messages:
+      error:
+        $ref: '#/components/messages/Error'
+
+operations:
+  clientIdentify:
+    action: send
+    channel:
+      $ref: '#/channels/authIdentify'
+    summary: Identify the user for this socket.
+    description: |
+      Socket.IO ack: the server responds via the Socket.IO acknowledgement callback.
+      Ack payload schema: `IdentifyAck`.
+    messages:
+      - $ref: '#/channels/authIdentify/messages/authIdentify'
+
+  serverIdentified:
+    action: receive
+    channel:
+      $ref: '#/channels/authIdentified'
+    summary: Confirmation emitted after successful identification.
+    messages:
+      - $ref: '#/channels/authIdentified/messages/authIdentified'
+
+  serverReady:
+    action: receive
+    channel:
+      $ref: '#/channels/serverReady'
+    summary: Emitted right after connect.
+    messages:
+      - $ref: '#/channels/serverReady/messages/serverReady'
+
+  clientSendMessage:
+    action: send
+    channel:
+      $ref: '#/channels/messageSend'
+    summary: Send a message to the global chat.
+    description: |
+      Requires prior `auth:identify`.
+
+      Socket.IO ack: the server responds via the Socket.IO acknowledgement callback.
+      Ack payload schema: `SendMessageAck`.
+    messages:
+      - $ref: '#/channels/messageSend/messages/messageSend'
+
+  serverNewMessage:
+    action: receive
+    channel:
+      $ref: '#/channels/messageNew'
+    summary: Broadcast of new messages (includes sender).
+    messages:
+      - $ref: '#/channels/messageNew/messages/messageNew'
+
+  clientTyping:
+    action: send
+    channel:
+      $ref: '#/channels/typing'
+    summary: Typing indicator.
+    description: |
+      Requires prior `auth:identify`.
+
+      Socket.IO ack: the server responds via the Socket.IO acknowledgement callback.
+      Ack payload schema: `TypingAck`.
+    messages:
+      - $ref: '#/channels/typing/messages/typing'
+
+  serverTypingUpdate:
+    action: receive
+    channel:
+      $ref: '#/channels/typingUpdate'
+    summary: Broadcast typing indicator to others.
+    messages:
+      - $ref: '#/channels/typingUpdate/messages/typingUpdate'
+
+  serverError:
+    action: receive
+    channel:
+      $ref: '#/channels/error'
+    summary: Error notification.
+    messages:
+      - $ref: '#/channels/error/messages/error'
+
+components:
+  schemas:
+    IdentifyPayload:
+      type: object
+      additionalProperties: false
+      properties:
+        username:
+          type: string
+          minLength: 2
+          maxLength: 32
+      required: [username]
+
+    IdentifyAck:
+      type: object
+      additionalProperties: false
+      properties:
+        userId:
+          type: string
+          description: UUID.
+        username:
+          type: string
+      required: [userId, username]
+
+    ServerReadyPayload:
+      type: object
+      additionalProperties: false
+      properties:
+        now:
+          type: string
+          format: date-time
+      required: [now]
+
+    SendMessagePayload:
+      type: object
+      additionalProperties: false
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        clientMessageId:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required: [content]
+
+    SendMessageAck:
+      type: object
+      additionalProperties: false
+      properties:
+        messageId:
+          type: string
+          description: UUID.
+        createdAt:
+          type: string
+          format: date-time
+        clientMessageId:
+          type: string
+      required: [messageId, createdAt]
+
+    MessageNewPayload:
+      type: object
+      additionalProperties: false
+      properties:
+        messageId:
+          type: string
+        sender:
+          type: object
+          additionalProperties: false
+          properties:
+            userId:
+              type: string
+            username:
+              type: string
+          required: [userId, username]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [messageId, sender, content, createdAt]
+
+    TypingPayload:
+      type: object
+      additionalProperties: false
+      properties:
+        isTyping:
+          type: boolean
+      required: [isTyping]
+
+    TypingAck:
+      type: object
+      additionalProperties: false
+      properties:
+        ok:
+          type: boolean
+          const: true
+      required: [ok]
+
+    TypingUpdatePayload:
+      type: object
+      additionalProperties: false
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        isTyping:
+          type: boolean
+      required: [userId, username, isTyping]
+
+    ErrorPayload:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+      required: [code, message]
+
+  messages:
+    AuthIdentify:
+      name: auth:identify
+      title: Identify
+      payload:
+        $ref: '#/components/schemas/IdentifyPayload'
+      examples:
+        - payload: { username: alice }
+
+    AuthIdentified:
+      name: auth:identified
+      title: Identified
+      payload:
+        $ref: '#/components/schemas/IdentifyAck'
+
+    ServerReady:
+      name: server:ready
+      title: Server Ready
+      payload:
+        $ref: '#/components/schemas/ServerReadyPayload'
+
+    MessageSend:
+      name: message:send
+      title: Send Message
+      payload:
+        $ref: '#/components/schemas/SendMessagePayload'
+
+    MessageNew:
+      name: message:new
+      title: New Message
+      payload:
+        $ref: '#/components/schemas/MessageNewPayload'
+
+    Typing:
+      name: typing
+      title: Typing
+      payload:
+        $ref: '#/components/schemas/TypingPayload'
+
+    TypingUpdate:
+      name: typing:update
+      title: Typing Update
+      payload:
+        $ref: '#/components/schemas/TypingUpdatePayload'
+
+    Error:
+      name: error
+      title: Error
+      payload:
+        $ref: '#/components/schemas/ErrorPayload'
