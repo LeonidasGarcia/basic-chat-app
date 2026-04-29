@@ -51,6 +51,12 @@ channels:
       messageNew:
         $ref: '#/components/messages/MessageNew'
 
+  messagesHistory:
+    address: messages:history
+    messages:
+      messagesHistory:
+        $ref: '#/components/messages/MessagesHistory'
+
   typing:
     address: typing
     messages:
@@ -117,6 +123,16 @@ operations:
     summary: Broadcast of new messages (includes sender).
     messages:
       - $ref: '#/channels/messageNew/messages/messageNew'
+
+  serverMessagesHistory:
+    action: receive
+    channel:
+      $ref: '#/channels/messagesHistory'
+    summary: Initial chat history sent after successful identification.
+    description: |
+      Contains up to the latest 50 stored messages in chronological order.
+    messages:
+      - $ref: '#/channels/messagesHistory/messages/messagesHistory'
 
   clientTyping:
     action: send
@@ -229,6 +245,16 @@ components:
           format: date-time
       required: [messageId, sender, content, createdAt]
 
+    MessagesHistoryPayload:
+      type: object
+      additionalProperties: false
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/MessageNewPayload'
+      required: [messages]
+
     TypingPayload:
       type: object
       additionalProperties: false
@@ -300,6 +326,12 @@ components:
       title: New Message
       payload:
         $ref: '#/components/schemas/MessageNewPayload'
+
+    MessagesHistory:
+      name: messages:history
+      title: Messages History
+      payload:
+        $ref: '#/components/schemas/MessagesHistoryPayload'
 
     Typing:
       name: typing
