@@ -16,6 +16,7 @@ import {
   AuthIdentifiedPayload,
   ErrorPayload,
   MessageNewPayload,
+  MessagesHistoryPayload,
   SendMessageAck,
   ServerReadyPayload,
   TypingAck,
@@ -69,9 +70,16 @@ export class ChatGateway {
         userId: user.id,
         username: user.username,
       };
-      false;
+
+      const recentMessages = await this.chat.getRecentMessages(50);
+      const historyPayload: MessagesHistoryPayload = {
+        messages: recentMessages
+          .reverse()
+          .map((message) => this.toMessagePayload(message)),
+      };
 
       client.emit('auth:identified', payload);
+      client.emit('messages:history', historyPayload);
       return payload; // Socket.IO ack callback
     } catch {
       this.emitError(client, {
@@ -101,12 +109,7 @@ export class ChatGateway {
         contentRaw: dto.content,
       });
 
-      const broadcast: MessageNewPayload = {
-        messageId: msg.id,
-        sender: { userId: msg.sender.id, username: msg.sender.username },
-        content: msg.content,
-        createdAt: msg.createdAt.toISOString(),
-      };
+      const broadcast = this.toMessagePayload(msg);
 
       this.server.to(GENERAL_ROOM).emit('message:new', broadcast);
 
@@ -154,6 +157,20 @@ export class ChatGateway {
 
   private emitError(client: Socket, payload: ErrorPayload) {
     client.emit('error', payload);
+  }
+
+  private toMessagePayload(message: {
+    id: string;
+    content: string;
+    createdAt: Date;
+    sender: { id: string; username: string };
+  }): MessageNewPayload {
+    return {
+      messageId: message.id,
+      sender: { userId: message.sender.id, username: message.sender.username },
+      content: message.content,
+      createdAt: message.createdAt.toISOString(),
+    };
   }
 
   private requireIdentity(

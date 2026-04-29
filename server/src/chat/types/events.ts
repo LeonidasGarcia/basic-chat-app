@@ -22,6 +22,10 @@ export type MessageNewPayload = {
   createdAt: string;
 };
 
+export type MessagesHistoryPayload = {
+  messages: MessageNewPayload[];
+};
+
 export type TypingUpdatePayload = {
   userId: string;
   username: string;
