@@ -46,6 +46,7 @@ export class ChatGateway {
     const payload: ServerReadyPayload = {
       now: new Date().toISOString(),
     };
+
     client.emit('server:ready', payload);
   }
 
@@ -68,6 +69,7 @@ export class ChatGateway {
         userId: user.id,
         username: user.username,
       };
+      false;
 
       client.emit('auth:identified', payload);
       return payload; // Socket.IO ack callback
@@ -84,19 +86,18 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: SendMessageDto,
   ): Promise<SendMessageAck | void> {
-    const { userId, username } = client.data as ChatSocketData;
+    const identity = this.requireIdentity(
+      client,
+      'Call auth:identify before sending messages.',
+    );
 
-    if (!userId || !username) {
-      this.emitError(client, {
-        code: 'UNIDENTIFIED',
-        message: 'Call auth:identify before sending messages.',
-      });
+    if (!identity) {
       return;
     }
 
     try {
       const msg = await this.chat.createMessage({
-        senderId: userId,
+        senderId: identity.userId,
         contentRaw: dto.content,
       });
 
@@ -112,7 +113,9 @@ export class ChatGateway {
       const ack: SendMessageAck = {
         messageId: msg.id,
         createdAt: msg.createdAt.toISOString(),
-        ...(dto.clientMessageId ? { clientMessageId: dto.clientMessageId } : {}),
+        ...(dto.clientMessageId
+          ? { clientMessageId: dto.clientMessageId }
+          : {}),
       };
 
       return ack;
@@ -129,19 +132,18 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() dto: TypingDto,
   ): Promise<TypingAck | void> {
-    const { userId, username } = client.data as ChatSocketData;
+    const identity = this.requireIdentity(
+      client,
+      'Call auth:identify before typing.',
+    );
 
-    if (!userId || !username) {
-      this.emitError(client, {
-        code: 'UNIDENTIFIED',
-        message: 'Call auth:identify before typing.',
-      });
+    if (!identity) {
       return;
     }
 
     const payload: TypingUpdatePayload = {
-      userId,
-      username,
+      userId: identity.userId,
+      username: identity.username,
       isTyping: dto.isTyping,
     };
 
@@ -152,5 +154,22 @@ export class ChatGateway {
 
   private emitError(client: Socket, payload: ErrorPayload) {
     client.emit('error', payload);
+  }
+
+  private requireIdentity(
+    client: Socket,
+    message: string,
+  ): Required<ChatSocketData> | void {
+    const { userId, username } = client.data as ChatSocketData;
+
+    if (!userId || !username) {
+      this.emitError(client, {
+        code: 'UNIDENTIFIED',
+        message,
+      });
+      return;
+    }
+
+    return { userId, username };
   }
 }

@@ -8,7 +8,7 @@ info:
 
     Notes:
     - Transport is Socket.IO (WebSocket + fallbacks), documented here as message-based WebSocket.
-    - All clients are implicitly in the global room `general`.
+    - All clients are in the global room **general**.
     - The client connects to the Socket.IO namespace `/chat`.
 
 defaultContentType: application/json
