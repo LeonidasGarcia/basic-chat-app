@@ -2,8 +2,9 @@
 
 ## Repo Shape
 - No root Node workspace. Work per package: `client/` and `server/`.
-- `client/` is the Vite app. Entrypoints: `client/src/main.tsx` -> `client/src/App.tsx`.
+- `client/` is the Vite app (React Compiler enabled). Entrypoints: `client/src/main.tsx` -> `client/src/App.tsx`.
 - `server/` is the NestJS + Socket.IO backend. Entrypoint: `server/src/main.ts`, wired in `server/src/app.module.ts`.
+- Prisma schema: `server/prisma/schema.prisma`. Postgres runs via Docker (`server/docker-compose.yml`).
 
 ## Dev Commands
 - Full local bootstrap from repo root: `./init-dev.sh`
