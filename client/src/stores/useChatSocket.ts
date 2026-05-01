@@ -16,7 +16,7 @@ interface ChatSocketStore {
 
 type TypingUpdate = Sender & { isTyping: boolean };
 
-// TODO Typing logic for the future
+// TODO Persist implementation
 
 export const useChatSocketStore = create<ChatSocketStore>((set, get) => ({
   userData: undefined,
