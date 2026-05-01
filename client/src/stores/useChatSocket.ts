@@ -6,11 +6,11 @@ interface ChatSocketStore {
   userData?: Sender;
   socket?: Socket;
   messages: Message[];
-
+  usersTyping: string[];
   connect: () => void;
   identify: (username: string) => void;
-  //disconnect: () => void;
   sendMessage: (content: string, clientMessageId: string) => void;
+  //disconnect: () => void;
 }
 
 // TODO Typing logic for the future
@@ -19,6 +19,7 @@ export const useChatSocketStore = create<ChatSocketStore>((set, get) => ({
   userData: null,
   socket: null,
   messages: [],
+  usersTyping: [],
   connect: () => {
     const socket = io('http://localhost:3001/chat');
 
