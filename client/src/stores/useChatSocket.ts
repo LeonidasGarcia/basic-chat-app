@@ -1,20 +1,9 @@
+import type { Message, Sender } from '@/lib/chat-types';
 import { io, Socket } from 'socket.io-client';
 import { create } from 'zustand';
 
-interface Message {
-  message: string;
-  sender: UserData;
-  content: string;
-  createdAt: string;
-}
-
-interface UserData {
-  username: string;
-  userId: string;
-}
-
 interface ChatSocketStore {
-  userData?: UserData;
+  userData?: Sender;
   socket?: Socket;
   messages: Message[];
 
@@ -23,6 +12,8 @@ interface ChatSocketStore {
   //disconnect: () => void;
   sendMessage: (content: string, clientMessageId: string) => void;
 }
+
+// TODO Typing logic for the future
 
 export const useChatSocketStore = create<ChatSocketStore>((set, get) => ({
   userData: null,
@@ -49,6 +40,10 @@ export const useChatSocketStore = create<ChatSocketStore>((set, get) => ({
           messages: updatedMessages,
         };
       });
+    });
+
+    socket.on('error', (err) => {
+      console.log(err);
     });
 
     set({ socket });
