@@ -1,7 +1,9 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
+import type { Sender } from '@/lib/chat-types';
+import { useChatSocketStore } from '@/stores/useChatSocket';
 
 type TypingIndicatorProps = {
-  users: string[];
+  users: Sender[];
 };
 
 function AnimatedDots() {
@@ -27,14 +29,18 @@ function AnimatedDots() {
 }
 
 export function TypingIndicator({ users }: TypingIndicatorProps) {
-  if (users.length === 0) return null;
+  const { userData } = useChatSocketStore();
+
+  const filteredUsers = users.filter((user) => user.userId != userData.userId);
+
+  if (filteredUsers.length === 0) return null;
 
   const label =
-    users.length === 1
-      ? `${users[0]} está escribiendo`
-      : users.length === 2
-        ? `${users[0]} y ${users[1]} están escribiendo`
-        : `${users[0]} y ${users.length - 1} más están escribiendo`;
+    filteredUsers.length === 1
+      ? `${filteredUsers[0].username} está escribiendo`
+      : filteredUsers.length === 2
+        ? `${filteredUsers[0].username} y ${filteredUsers[1].username} están escribiendo`
+        : `${filteredUsers[0].username} y ${filteredUsers.length - 1} más están escribiendo`;
 
   return (
     <div className="flex items-center gap-2 px-4 py-2">

@@ -4,7 +4,7 @@ import { MessageBubble } from './MessageBubble';
 
 type MessageListProps = {
   messages: Message[];
-  currentUserId: string;
+  currentUserId?: string;
 };
 
 export function MessageList({ messages, currentUserId }: MessageListProps) {

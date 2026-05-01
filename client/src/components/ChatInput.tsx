@@ -1,7 +1,7 @@
-import { useRef, useCallback } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { SendHorizontal } from "lucide-react";
+import { useRef, useCallback } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { SendHorizontal } from 'lucide-react';
 
 type ChatInputProps = {
   onSend: (content: string) => void;
@@ -12,26 +12,33 @@ export function ChatInput({ onSend, onTyping }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = useCallback(() => {
-    const content = textareaRef.current?.value.trim() ?? "";
+    const content = textareaRef.current?.value.trim() ?? '';
     if (!content) return;
     onSend(content);
-    if (textareaRef.current) textareaRef.current.value = "";
+    if (textareaRef.current) textareaRef.current.value = '';
     onTyping(false);
   }, [onSend, onTyping]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend],
   );
 
-  const handleChange = useCallback(() => {
-    onTyping(true);
-  }, [onTyping]);
+  const handleChange = useCallback(
+    (e) => {
+      if (e.target.value === '') {
+        onTyping(false);
+      } else {
+        onTyping(true);
+      }
+    },
+    [onTyping],
+  );
 
   return (
     <div className="flex items-end gap-2 border-t bg-background px-4 py-3">
